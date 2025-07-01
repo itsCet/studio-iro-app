@@ -13,20 +13,16 @@ const StarIcon = ({ filled }) => <svg xmlns="http://www.w3.org/2000/svg" classNa
 const PhoneIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" /></svg>;
 const LockClosedIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline-block mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>;
 
-
 // --- CONFIGURATION FIREBASE ---
-// This version works in the preview environment.
-// For Netlify, you will need to switch to process.env variables.
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
+// This version is for Netlify and reads from environment variables.
+const firebaseConfig = JSON.parse(process.env.REACT_APP_FIREBASE_CONFIG || '{}');
+const appId = process.env.REACT_APP_APP_ID || 'default-app-id';
 
 // --- INITIALISATION FIREBASE ---
 let app;
 let db = {};
 let auth = {};
 
-// We wrap this in a try-catch block to prevent the app from crashing if the env variables are missing
 try {
   app = initializeApp(firebaseConfig);
   db = getFirestore(app);
@@ -34,7 +30,6 @@ try {
 } catch (error) {
   console.error("Firebase initialization failed. Check your environment variables.", error);
 }
-
 
 // --- DONNÉES DE L'APPLICATION ---
 const services = [
@@ -45,8 +40,8 @@ const services = [
 ];
 
 const DEPOSIT_AMOUNT = 20;
-const TWINT_PHONE_NUMBER = "079 123 45 67"; // <-- METTEZ VOTRE VRAI NUMÉRO ICI
-const ADMIN_PASSWORD = "admin123"; // <-- Mot de passe pour l'accès admin
+const TWINT_PHONE_NUMBER = "079 123 45 67"; 
+const ADMIN_PASSWORD = "admin123"; 
 
 // --- COMPOSANTS UI ---
 const Header = ({ setPage }) => (
@@ -103,7 +98,7 @@ const ReviewsPage = () => {
     const [error, setError] = useState('');
 
     useEffect(() => {
-        if (!db.collection) return; // Guard against Firebase not being initialized
+        if (!db.collection) return; 
         const reviewsCollection = collection(db, `artifacts/${appId}/public/data/reviews`);
         const q = query(reviewsCollection, orderBy("createdAt", "desc"));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
