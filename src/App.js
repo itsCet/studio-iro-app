@@ -15,13 +15,17 @@ const LockClosedIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="
 
 
 // --- CONFIGURATION FIREBASE ---
-const firebaseConfig = JSON.parse(process.env.REACT_APP_FIREBASE_CONFIG);
-const appId = process.env.REACT_APP_APP_ID;
+// This version works in the preview environment.
+// For Netlify, you will need to switch to process.env variables.
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
 
 // --- INITIALISATION FIREBASE ---
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
+
 
 // --- DONNÉES DE L'APPLICATION ---
 const services = [
@@ -134,7 +138,7 @@ const ReviewsPage = () => {
     );
 };
 
-const BookingPage = ({ userId }) => {
+const BookingPage = ({ userId, setPage }) => {
     const [step, setStep] = useState(1);
     const [selectedService, setSelectedService] = useState(null);
     const [selectedDate, setSelectedDate] = useState(new Date());
@@ -343,11 +347,15 @@ export default function App() {
     const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
 
     useEffect(() => {
-        onAuthStateChanged(auth, (user) => {
-            if (user) { setUserId(user.uid); } 
-            else { signInAnonymously(auth).catch(error => console.error("Auth Error", error)); }
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (user) { 
+                setUserId(user.uid); 
+            } else { 
+                signInAnonymously(auth).catch(error => console.error("Auth Error", error)); 
+            }
             setIsAuthReady(true);
         });
+        return () => unsubscribe();
     }, []);
 
     const handleAdminAccess = () => {
@@ -368,7 +376,7 @@ export default function App() {
         if (!isAuthReady) { return <div className="text-center py-20">Chargement de l'application...</div>; }
         switch (page) {
             case 'prestations': return <ServicesPage />;
-            case 'réserver': return <BookingPage userId={userId} />;
+            case 'réserver': return <BookingPage userId={userId} setPage={setPage} />;
             case 'avis': return <ReviewsPage />;
             case 'admin': return isAdminAuthenticated ? <AdminPage setPage={setPage} /> : <HomePage setPage={setPage} />;
             case 'home': default: return <HomePage setPage={setPage} />;
@@ -383,11 +391,10 @@ export default function App() {
             </main>
             <footer className="text-center py-6 border-t border-stone-200/80 mt-12">
                 <p className="text-sm text-stone-500">&copy; {new Date().getFullYear()} Studio Iro. Tous droits réservés.</p>
-                <button onClick={handleAdminAccess} className="text-xs text-stone-400 mt-2 hover:text-stone-700">
+                <button onClick={handleAdminAccess} className="text-xs text-stone-400 mt-2 hover:text-stone-700 flex items-center justify-center mx-auto">
                     <LockClosedIcon /> Administration
                 </button>
             </footer>
         </div>
     );
 }
-
