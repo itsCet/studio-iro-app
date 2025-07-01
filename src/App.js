@@ -15,9 +15,10 @@ const LockClosedIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="
 
 
 // --- CONFIGURATION FIREBASE ---
-// This version is for Netlify and reads from environment variables.
-const firebaseConfig = JSON.parse(process.env.REACT_APP_FIREBASE_CONFIG || '{}');
-const appId = process.env.REACT_APP_APP_ID || 'default-app-id';
+// This version works in the preview environment.
+// For Netlify, you will need to switch to process.env variables.
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
 
 // --- INITIALISATION FIREBASE ---
@@ -157,8 +158,12 @@ const BookingPage = ({ userId, setPage }) => {
     const [bookedSlots, setBookedSlots] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     
-    const today = new Date();
-    today.setHours(0,0,0,0);
+    const today = useMemo(() => {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d;
+    }, []);
+
     const [currentMonth, setCurrentMonth] = useState(new Date().getMonth());
     const [currentYear, setCurrentYear] = useState(new Date().getFullYear());
 
@@ -173,7 +178,7 @@ const BookingPage = ({ userId, setPage }) => {
             days.push({ key: d.toISOString(), day, date: d, isPast: d < today });
         }
         return days;
-    }, [currentMonth, currentYear]);
+    }, [currentMonth, currentYear, today]);
 
     const changeMonth = (delta) => {
         const newDate = new Date(currentYear, currentMonth + delta, 1);
