@@ -15,10 +15,9 @@ const LockClosedIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="
 
 
 // --- CONFIGURATION FIREBASE ---
-// This version works in the preview environment.
-// For Netlify, you will need to switch to process.env variables.
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+// This version is for Netlify and reads from environment variables.
+const firebaseConfig = JSON.parse(process.env.REACT_APP_FIREBASE_CONFIG || '{}');
+const appId = process.env.REACT_APP_APP_ID || 'default-app-id';
 
 
 // --- INITIALISATION FIREBASE ---
