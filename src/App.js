@@ -15,16 +15,24 @@ const LockClosedIcon = () => <svg xmlns="http://www.w3.org/2000/svg" className="
 
 
 // --- CONFIGURATION FIREBASE ---
-// This version works in the preview environment.
-// For Netlify, you will need to switch to process.env variables.
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+// This version is for Netlify and reads from environment variables.
+const firebaseConfig = JSON.parse(process.env.REACT_APP_FIREBASE_CONFIG || '{}');
+const appId = process.env.REACT_APP_APP_ID || 'default-app-id';
 
 
 // --- INITIALISATION FIREBASE ---
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
+let app;
+let db = {};
+let auth = {};
+
+// We wrap this in a try-catch block to prevent the app from crashing if the env variables are missing
+try {
+  app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  auth = getAuth(app);
+} catch (error) {
+  console.error("Firebase initialization failed. Check your environment variables.", error);
+}
 
 
 // --- DONNÉES DE L'APPLICATION ---
@@ -94,6 +102,7 @@ const ReviewsPage = () => {
     const [error, setError] = useState('');
 
     useEffect(() => {
+        if (!db.collection) return; // Guard against Firebase not being initialized
         const reviewsCollection = collection(db, `artifacts/${appId}/public/data/reviews`);
         const q = query(reviewsCollection, orderBy("createdAt", "desc"));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -110,6 +119,7 @@ const ReviewsPage = () => {
 
     const handleAddReview = async (e) => {
         e.preventDefault();
+        if (!db.collection) return;
         if (!newReview.name || !newReview.comment) { setError('Veuillez remplir votre nom et votre commentaire.'); return; }
         setIsSubmitting(true);
         setError('');
@@ -193,7 +203,7 @@ const BookingPage = ({ userId, setPage }) => {
     }, [selectedService, selectedDate, bookedSlots]);
     
     useEffect(() => {
-        if (!selectedDate) return;
+        if (!db.collection || !selectedDate) return;
         setIsLoading(true);
         const startOfDay = new Date(selectedDate); startOfDay.setHours(0, 0, 0, 0);
         const endOfDay = new Date(selectedDate); endOfDay.setHours(23, 59, 59, 999);
@@ -214,6 +224,7 @@ const BookingPage = ({ userId, setPage }) => {
     const handleUserInfoSubmit = (e) => { e.preventDefault(); if (userInfo.name && userInfo.email && userInfo.phone) { setStep(4); } };
     
     const handleManualPaymentConfirmation = async () => {
+        if (!db.collection) return;
         setIsLoading(true);
         const [hours, minutes] = selectedTime.split(':');
         const finalDateTime = new Date(selectedDate);
@@ -256,6 +267,7 @@ const AdminPage = ({ setPage }) => {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        if (!db.collection) return;
         const appointmentsCollection = collection(db, `artifacts/${appId}/public/data/appointments`);
         const q = query(appointmentsCollection, orderBy("startTime", "desc"));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
@@ -273,6 +285,7 @@ const AdminPage = ({ setPage }) => {
     }, []);
 
     const handleConfirmAppointment = async (id) => {
+        if (!db.collection) return;
         const appointmentRef = doc(db, `artifacts/${appId}/public/data/appointments`, id);
         try {
             await updateDoc(appointmentRef, {
@@ -347,6 +360,7 @@ export default function App() {
     const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
 
     useEffect(() => {
+        if (!auth.onAuthStateChanged) return;
         const unsubscribe = onAuthStateChanged(auth, (user) => {
             if (user) { 
                 setUserId(user.uid); 
